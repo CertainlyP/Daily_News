@@ -4,7 +4,7 @@ TTP Monitoring System - Main Script
 
 Daily threat intelligence monitoring system that:
 1. Fetches content from Twitter and articles
-2. Analyzes content with Claude API
+2. Analyzes content with Google Gemini API
 3. Generates HTML report with actionable intelligence
 """
 
@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 
 from fetcher import ContentFetcher
-from ttp_analyzer import TTPAnalyzer
+from gemini_analyzer import GeminiAnalyzer
 from report_generator import ReportGenerator
 
 
@@ -39,10 +39,10 @@ def main():
     load_env()
 
     # Verify API key
-    if not os.getenv('ANTHROPIC_API_KEY'):
-        print("❌ ERROR: ANTHROPIC_API_KEY not set")
-        print("   Create a .env file with: ANTHROPIC_API_KEY=your_key_here")
-        print("   Or: export ANTHROPIC_API_KEY=your_key")
+    if not os.getenv('GEMINI_API_KEY'):
+        print("❌ ERROR: GEMINI_API_KEY not set")
+        print("   Create a .env file with: GEMINI_API_KEY=your_key_here")
+        print("   Or: export GEMINI_API_KEY=your_key")
         sys.exit(1)
 
     # Create output directory
@@ -61,10 +61,10 @@ def main():
             print("⚠️  No content fetched. Check your configuration.")
             sys.exit(0)
 
-        # Step 2: Analyze with Claude
-        print("🤖 Step 2: Analyzing content with Claude API...")
+        # Step 2: Analyze with Gemini
+        print("🤖 Step 2: Analyzing content with Google Gemini API...")
         print("-" * 50)
-        analyzer = TTPAnalyzer()
+        analyzer = GeminiAnalyzer()
         analyzed_data = []
 
         for i, item in enumerate(content_items, 1):
