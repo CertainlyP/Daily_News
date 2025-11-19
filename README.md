@@ -111,25 +111,72 @@ python main.py
 
 **That's it!** 🎉 Open the generated HTML report in `reports/`
 
-## 📸 Demo
+## 📸 Screenshots
 
-The system generates comprehensive reports organized by threat type:
+### Dark Mode Report Interface
+The system generates beautiful, dark-themed HTML reports optimized for security analysts:
 
-### Report Sections
-- **🛠️ Tool Analysis** - Security tools, RATs, malware capabilities
-- **🔓 Vulnerability Analysis** - CVEs, exploits, patches
-- **🎭 Threat Actor Profiles** - APT groups, targeting, TTPs
-- **🔬 Technique Research** - Detection gaps, novel techniques
-- **🚨 Detection Engineering** - Queries, rules, hunting logic
-- **💥 IOC-Based Threats** - Malware campaigns with indicators
+![Report Header](docs/screenshots/header.png)
+*Main dashboard showing executive summary and statistics*
 
-### Example Output
-Each threat includes:
-- ✅ Severity tags (Critical, High, Medium, Low)
-- ✅ Exploit availability and complexity
-- ✅ Detection methods for your environment
-- ✅ Actionable mitigation steps
-- ✅ Key findings and takeaways
+![Vulnerability Analysis](docs/screenshots/vuln-analysis.png)
+*Detailed vulnerability cards with CVEs, affected products, and mitigation steps*
+
+![Tool Analysis](docs/screenshots/tool-analysis.png)
+*Comprehensive tool analysis with capabilities and detection methods*
+
+> **Note:** Take screenshots of your generated reports and add them to `docs/screenshots/` directory for a visual preview.
+
+### What You'll See
+
+#### 📊 Executive Summary
+- Total sources analyzed
+- Actionable items count
+- Content type breakdown
+- Statistics cards
+
+#### 🔓 Vulnerability Analysis
+```
+CVE-2025-XXXXX [CRITICAL] [EXPLOIT AVAILABLE] [EXPLOITED IN WILD]
+
+Affected Products:
+• FortiWeb 8.0 (8.0.0 through 8.0.1)
+• FortiWeb 7.6 (7.6.0 through 7.6.5)
+...
+
+Attack Vector:
+Authenticated OS command injection via crafted HTTP requests
+
+Detection Methods:
+• Monitor for crafted HTTP requests containing special elements
+• Trend Micro security solutions detections
+
+Mitigation:
+Upgrade to FortiWeb versions 8.0.2, 7.6.6, 7.4.11...
+
+Key Takeaway:
+Immediate action required - actively exploited zero-day RCE...
+```
+
+#### 🛠️ Tool Analysis
+```
+ShinySp1d3r
+
+Purpose: Ransomware-as-a-Service (RaaS) encryptor
+
+Capabilities:
+• Hooks EtwEventWrite to suppress Windows Event Logging
+• Terminates processes holding file handles
+• Wipes free disk space
+• Self-propagation via WMI/GPO
+...
+
+Detection Methods:
+• Monitor for file headers beginning with 'SPDR'
+• Detect creation of 'wipe-[random].tmp' files
+• Alert on EtwEventWrite API hooking
+...
+```
 
 ## 🤖 Automation
 
