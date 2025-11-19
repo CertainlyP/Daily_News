@@ -549,7 +549,8 @@ class ReportGenerator:
         """Build section for non-actionable content."""
         item_list = []
         for item in items:
-            summary = item.get('data', {}).get('summary', item.get('summary', 'No summary'))
+            data = item.get('data') or {}
+            summary = data.get('summary', item.get('summary', 'No summary'))
             url = item.get('source_url', '')
             item_list.append(f'<li><a href="{url}" target="_blank">{summary}</a></li>')
 
