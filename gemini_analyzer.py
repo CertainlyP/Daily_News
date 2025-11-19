@@ -1,19 +1,28 @@
-"""TTP analysis using Claude API with adaptive extraction."""
+"""TTP analysis using Google Gemini API with adaptive extraction."""
 import json
 import os
 from typing import Dict, Any
-from anthropic import Anthropic
+import google.generativeai as genai
 
 
-class TTPAnalyzer:
-    """Analyzes security content and extracts TTPs using Claude API."""
+class GeminiAnalyzer:
+    """Analyzes security content and extracts TTPs using Google Gemini API."""
 
     def __init__(self):
-        api_key = os.getenv('ANTHROPIC_API_KEY')
+        api_key = os.getenv('GEMINI_API_KEY')
         if not api_key:
-            raise ValueError("ANTHROPIC_API_KEY environment variable not set")
-        self.client = Anthropic(api_key=api_key)
-        self.model = "claude-sonnet-4-20250514"
+            raise ValueError("GEMINI_API_KEY environment variable not set")
+
+        genai.configure(api_key=api_key)
+        self.model = genai.GenerativeModel('gemini-1.5-flash')
+
+        # Configure generation settings for structured output
+        self.generation_config = {
+            'temperature': 0.1,
+            'top_p': 0.95,
+            'top_k': 40,
+            'max_output_tokens': 8192,
+        }
 
     def analyze(self, content: str, source_url: str) -> Dict[str, Any]:
         """
@@ -59,15 +68,10 @@ Content:
 {content[:3000]}"""
 
         try:
-            response = self.client.messages.create(
-                model=self.model,
-                max_tokens=500,
-                messages=[{"role": "user", "content": prompt}]
-            )
+            response = self.model.generate_content(prompt, generation_config=self.generation_config)
+            result_text = response.text.strip()
 
-            result_text = response.content[0].text
-            # Extract JSON from response (in case there's extra text)
-            result_text = result_text.strip()
+            # Extract JSON from response
             if result_text.startswith('```json'):
                 result_text = result_text.split('```json')[1].split('```')[0]
             elif result_text.startswith('```'):
@@ -97,15 +101,10 @@ Content:
         full_prompt = f"{prompt}\n\nSource: {source_url}\n\nContent:\n{content[:8000]}"
 
         try:
-            response = self.client.messages.create(
-                model=self.model,
-                max_tokens=3000,
-                messages=[{"role": "user", "content": full_prompt}]
-            )
+            response = self.model.generate_content(full_prompt, generation_config=self.generation_config)
+            result_text = response.text.strip()
 
-            result_text = response.content[0].text
             # Extract JSON from response
-            result_text = result_text.strip()
             if result_text.startswith('```json'):
                 result_text = result_text.split('```json')[1].split('```')[0]
             elif result_text.startswith('```'):
@@ -262,24 +261,3 @@ Return ONLY valid JSON:
   "actionable_items": ["things you should do based on this"],
   "relevance": "why this matters or doesn't matter"
 }"""
-
-
-if __name__ == "__main__":
-    # Test the analyzer
-    import sys
-
-    if len(sys.argv) < 2:
-        print("Usage: python ttp_analyzer.py <test_content>")
-        sys.exit(1)
-
-    # Load API key from .env if it exists
-    if os.path.exists('.env'):
-        with open('.env') as f:
-            for line in f:
-                if line.startswith('ANTHROPIC_API_KEY='):
-                    os.environ['ANTHROPIC_API_KEY'] = line.split('=', 1)[1].strip()
-
-    analyzer = TTPAnalyzer()
-    test_content = sys.argv[1]
-    result = analyzer.analyze(test_content, "test://url")
-    print(json.dumps(result, indent=2))
