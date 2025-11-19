@@ -1,0 +1,14 @@
+{
+  "sources": {
+    "twitter_accounts": [],
+    "article_urls": [
+      "https://www.bleepingcomputer.com/news/security/",
+      "https://thehackernews.com/"
+    ]
+  },
+  "settings": {
+    "twitter_session_file": "twitter_session.json",
+    "output_dir": "reports",
+    "max_tweets_per_account": 10
+  }
+}

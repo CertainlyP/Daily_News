@@ -7,6 +7,9 @@ twitter_session.json
 # Generated reports
 reports/
 
+# Fetched content (may contain sensitive intel)
+fetched_content/
+
 # Python
 __pycache__/
 *.py[cod]
