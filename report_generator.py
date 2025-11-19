@@ -442,10 +442,18 @@ class ReportGenerator:
         """Build card for tool analysis."""
         name = data.get('tool_name', 'Unknown Tool')
         purpose = data.get('tool_purpose', '')
+        capabilities = data.get('capabilities', [])
         detection_methods = data.get('detection_methods', [])
+        legitimate_use_cases = data.get('legitimate_use_cases', [])
+        malicious_use_cases = data.get('malicious_use_cases', [])
+        telemetry_sources = data.get('telemetry_sources', [])
         takeaway = data.get('key_takeaway', '')
 
-        detection_list = '<ul>' + ''.join(f'<li>{method}</li>' for method in detection_methods) + '</ul>' if detection_methods else ''
+        capabilities_html = '<ul>' + ''.join(f'<li>{cap}</li>' for cap in capabilities) + '</ul>' if capabilities else '<p>N/A</p>'
+        detection_html = '<ul>' + ''.join(f'<li>{method}</li>' for method in detection_methods) + '</ul>' if detection_methods else '<p>N/A</p>'
+        legit_html = '<ul>' + ''.join(f'<li>{use}</li>' for use in legitimate_use_cases) + '</ul>' if legitimate_use_cases else '<p>None identified</p>'
+        malicious_html = '<ul>' + ''.join(f'<li>{use}</li>' for use in malicious_use_cases) + '</ul>' if malicious_use_cases else '<p>N/A</p>'
+        telemetry_html = '<ul>' + ''.join(f'<li>{tel}</li>' for tel in telemetry_sources) + '</ul>' if telemetry_sources else '<p>N/A</p>'
 
         return f"""
         <div class="{card_class}">
@@ -458,8 +466,28 @@ class ReportGenerator:
             </div>
 
             <div class="subsection">
+                <h4>Capabilities</h4>
+                {capabilities_html}
+            </div>
+
+            <div class="subsection">
+                <h4>Legitimate Use Cases</h4>
+                {legit_html}
+            </div>
+
+            <div class="subsection">
+                <h4>Malicious Use Cases</h4>
+                {malicious_html}
+            </div>
+
+            <div class="subsection">
                 <h4>Detection Methods</h4>
-                {detection_list}
+                {detection_html}
+            </div>
+
+            <div class="subsection">
+                <h4>Telemetry Sources</h4>
+                {telemetry_html}
             </div>
 
             <div class="key-finding">
@@ -494,19 +522,51 @@ class ReportGenerator:
         """Build card for vulnerability analysis."""
         cve = data.get('cve_id', 'Unknown CVE')
         severity = data.get('severity', 'unknown')
+        affected_products = data.get('affected_products', [])
         attack_vector = data.get('attack_vector', '')
+        exploit_available = data.get('exploit_available', False)
+        exploit_complexity = data.get('exploit_complexity', '')
+        detection_methods = data.get('detection_methods', [])
+        mitigation = data.get('mitigation', '')
+        observed_in_wild = data.get('observed_in_wild', False)
         takeaway = data.get('key_takeaway', '')
 
         severity_tag = f'<span class="tag {severity}">{severity.upper()}</span>'
+        exploit_tag = '<span class="tag critical">EXPLOIT AVAILABLE</span>' if exploit_available else ''
+        wild_tag = '<span class="tag high">EXPLOITED IN WILD</span>' if observed_in_wild else ''
+
+        products_html = '<ul>' + ''.join(f'<li>{p}</li>' for p in affected_products) + '</ul>' if affected_products else '<p>N/A</p>'
+        detection_html = '<ul>' + ''.join(f'<li>{d}</li>' for d in detection_methods) + '</ul>' if detection_methods else '<p>N/A</p>'
 
         return f"""
         <div class="{card_class}">
-            <h3>{cve} {severity_tag}</h3>
+            <h3>{cve} {severity_tag} {exploit_tag} {wild_tag}</h3>
             <a href="{source_url}" class="source-link" target="_blank">📎 Source →</a>
+
+            <div class="subsection">
+                <h4>Affected Products</h4>
+                {products_html}
+            </div>
 
             <div class="subsection">
                 <h4>Attack Vector</h4>
                 <p>{attack_vector}</p>
+            </div>
+
+            <div class="subsection">
+                <h4>Exploit Details</h4>
+                <p><strong>Complexity:</strong> {exploit_complexity}</p>
+                <p><strong>Observed in Wild:</strong> {'Yes' if observed_in_wild else 'No'}</p>
+            </div>
+
+            <div class="subsection">
+                <h4>Detection Methods</h4>
+                {detection_html}
+            </div>
+
+            <div class="subsection">
+                <h4>Mitigation</h4>
+                <p>{mitigation}</p>
             </div>
 
             <div class="key-finding">
