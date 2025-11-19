@@ -40,16 +40,43 @@ class ContentFetcher:
         posts = []
         accounts = self.config['sources']['twitter_accounts']
 
+        if not accounts:
+            print("  No Twitter accounts configured.")
+            return posts
+
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             context = browser.new_context(storage_state=self.twitter_session)
             page = context.new_page()
 
+            # Verify login first
+            try:
+                print("  Verifying Twitter session...")
+                page.goto("https://twitter.com/home", timeout=30000)
+                page.wait_for_timeout(3000)
+
+                # Check if we're actually logged in
+                if "login" in page.url:
+                    print("    ✗ Twitter cookies expired or invalid")
+                    print("    → Get fresh cookies:")
+                    print("       1. Open twitter.com in browser (logged in)")
+                    print("       2. F12 → Application → Cookies")
+                    print("       3. Copy auth_token and ct0 values")
+                    print("       4. Update twitter_session.json")
+                    browser.close()
+                    return posts
+
+                print("    ✓ Session valid")
+            except Exception as e:
+                print(f"    ✗ Session check failed: {e}")
+                browser.close()
+                return posts
+
             for account in accounts:
                 try:
                     print(f"  Fetching from @{account}...")
-                    page.goto(f"https://twitter.com/{account}", timeout=30000)
-                    page.wait_for_load_state("networkidle", timeout=20000)
+                    page.goto(f"https://twitter.com/{account}", timeout=60000)
+                    page.wait_for_timeout(5000)  # Simple wait
 
                     # Wait for tweets to load
                     page.wait_for_selector('article[data-testid="tweet"]', timeout=10000)
