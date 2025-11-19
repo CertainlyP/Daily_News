@@ -6,6 +6,7 @@
   "settings": {
     "twitter_session_file": "twitter_session.json",
     "output_dir": "reports",
-    "max_tweets_per_account": 10
+    "max_tweets_per_account": 10,
+    "max_articles_per_source": 5
   }
 }
