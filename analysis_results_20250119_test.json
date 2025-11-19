@@ -1,0 +1,160 @@
+[
+  {
+    "source_url": "https://twitter.com/vxunderground/status/123",
+    "content_type": "ioc_based",
+    "data": {
+      "threat_name": "AsyncRAT Financial Sector Campaign",
+      "iocs": {
+        "ips": ["45.142.212.61"],
+        "domains": [],
+        "urls": [],
+        "hashes": {
+          "sha256": ["8f2a6d4e9c1b7a3f5e8d2c4b6a9f1e3d7c5b8a2f4e6d9c1b3a5f7e9d2c4b6a8f"],
+          "md5": [],
+          "sha1": []
+        },
+        "file_names": [],
+        "registry_keys": [],
+        "mutex": [],
+        "user_agents": [],
+        "email_subjects": []
+      },
+      "infrastructure": {
+        "hosting_provider": "Unknown",
+        "asn": "",
+        "registrar": "",
+        "ssl_certs": []
+      },
+      "technical_details": {
+        "execution_flow": "Initial access via phishing emails with malicious Excel macros",
+        "obfuscation": "Not specified",
+        "persistence_mechanism": "Not specified",
+        "c2_protocol": "DNS tunneling",
+        "encryption": "Not specified",
+        "sandbox_evasion": "Not specified"
+      },
+      "detection_queries": [
+        "DeviceNetworkEvents | where RemoteIP == '45.142.212.61'",
+        "DeviceFileEvents | where SHA256 == '8f2a6d4e9c1b7a3f5e8d2c4b6a9f1e3d7c5b8a2f4e6d9c1b3a5f7e9d2c4b6a8f'",
+        "DnsEvents | where QueryType == 'TXT' and Name contains_any ('async', 'rat') | summarize count() by ClientIP",
+        "EmailEvents | where AttachmentFileType == 'xlsm' or AttachmentFileType == 'xls' | where SenderDomain !in (trusted_domains)"
+      ],
+      "sample_info": {
+        "sample_links": [],
+        "yara_rules": ""
+      },
+      "key_findings": "AsyncRAT campaign specifically targeting financial institutions using DNS tunneling for C2 communication - uncommon technique that bypasses many traditional network security controls. Initial vector is Excel macro phishing, suggesting user interaction required."
+    }
+  },
+  {
+    "source_url": "https://twitter.com/malwrhunterteam/status/456",
+    "content_type": "technique_research",
+    "data": {
+      "technique_name": "BYOVD - Bring Your Own Vulnerable Driver",
+      "attack_vector": "Attackers load signed but vulnerable kernel drivers (RTCore64.sys, DBUtil_2_3.sys) to gain kernel-level access and disable EDR products by terminating protected processes or removing kernel callbacks",
+      "prerequisites": "Administrator privileges to load drivers; vulnerable signed driver file; knowledge of driver exploitation techniques",
+      "detection_gap": "Most EDRs don't properly monitor driver loads at kernel level. Many security products focus on user-mode hooks which can be bypassed once attacker has kernel access",
+      "detection_ideas": [
+        "Monitor Sysmon Event ID 6 (Driver Loaded) for known vulnerable driver hashes",
+        "Track driver certificate signers - vulnerable drivers often signed by MSI, ASRock, Gigabyte",
+        "Monitor for minifilter removal events (EDR bypass indicator)",
+        "Alert on kernel callback removal attempts",
+        "Baseline normal drivers on systems and alert on deviations",
+        "Monitor for user-mode processes loading drivers (unusual pattern)"
+      ],
+      "affected_products": [
+        "Most EDR products with user-mode hooks only",
+        "Endpoint security products without kernel-mode driver monitoring",
+        "Products that don't validate driver certificates against revocation lists"
+      ],
+      "mitigation": "Enable Windows Defender Application Control (WDAC) to block known vulnerable drivers; Use Microsoft's recommended driver block list; Deploy Hypervisor-Protected Code Integrity (HVCI); Monitor and alert on driver loads; Keep EDR products updated with kernel-mode protection",
+      "poc_available": true,
+      "key_takeaway": "URGENT: If your EDR doesn't monitor kernel driver loads, you have a significant blind spot. Enable Sysmon Event ID 6 logging immediately and hunt for RTCore64.sys and DBUtil_2_3.sys. This technique is actively used by ransomware groups to disable your defenses before payload deployment."
+    }
+  },
+  {
+    "source_url": "https://twitter.com/JAMESWT_WT/status/789",
+    "content_type": "tool_analysis",
+    "data": {
+      "tool_name": "Lumma Stealer v4.0",
+      "tool_purpose": "Information stealer malware targeting browser credentials, cryptocurrency wallets, and sensitive data",
+      "capabilities": [
+        "VM detection via CPUID instructions",
+        "Sandbox evasion through timing checks",
+        "Memory encryption for credential storage",
+        "Targets Chrome, Firefox, Edge password vaults",
+        "Exfiltrates browser cookies and autofill data",
+        "Advanced anti-analysis techniques"
+      ],
+      "detection_methods": [
+        "Monitor for CPUID instruction execution from suspicious processes",
+        "Detect timing-based evasion (suspicious Sleep() calls, GetTickCount() checks)",
+        "Browser process hollowing or credential file access from non-browser processes",
+        "Unusual access to browser LocalState/Login Data files",
+        "Network connections to known Lumma C2 infrastructure",
+        "Memory scanning for credential vault access patterns"
+      ],
+      "legitimate_use_cases": [],
+      "malicious_use_cases": [
+        "Credential theft from browsers",
+        "Cryptocurrency wallet theft",
+        "Session hijacking via cookie theft",
+        "Corporate credential harvesting",
+        "Follow-on attacks using stolen credentials"
+      ],
+      "telemetry_sources": [
+        "EDR process telemetry (file access events)",
+        "Browser process monitoring",
+        "Memory access monitoring",
+        "Network traffic analysis",
+        "File integrity monitoring on browser data directories"
+      ],
+      "key_takeaway": "Monitor for ANY non-browser process accessing Chrome/Firefox/Edge credential files. Detection query: DeviceFileEvents | where FolderPath contains 'Login Data' or FolderPath contains 'logins.json' | where InitiatingProcessName !in ('chrome.exe', 'firefox.exe', 'msedge.exe'). Initial access via SEO poisoning means users searching for legitimate software may download this - educate users and monitor for unusual browser data access."
+    }
+  },
+  {
+    "source_url": "https://www.bleepingcomputer.com/news/security/new-critical-vulnerability",
+    "content_type": "vulnerability_analysis",
+    "data": {
+      "cve_id": "CVE-2025-1234",
+      "affected_products": [
+        "Fortinet FortiGate versions 7.0.0 through 7.0.13",
+        "Fortinet FortiGate versions 7.2.0 through 7.2.6"
+      ],
+      "severity": "critical",
+      "exploit_available": true,
+      "exploit_complexity": "easy",
+      "attack_vector": "Unauthenticated remote code execution via specially crafted HTTP requests to SSL-VPN portal at /remote/login endpoint",
+      "detection_methods": [
+        "Monitor FortiGate logs for error code FGT_ERR_SSL_VPN_AUTH_BYPASS",
+        "Alert on unusual HTTP requests to /remote/login endpoints",
+        "Monitor for suspicious process spawns from fgfmd daemon",
+        "Network IDS rules for exploitation attempts",
+        "Monitor for post-exploitation activity from FortiGate devices"
+      ],
+      "mitigation": "IMMEDIATE ACTION REQUIRED: Patch to versions 7.0.14+ or 7.2.7+. If patching not possible: (1) Disable SSL-VPN completely, (2) Restrict SSL-VPN access via firewall rules to trusted IPs only, (3) Deploy Fortinet IPS signature 50123. Over 150,000 devices currently exposed.",
+      "observed_in_wild": true,
+      "key_takeaway": "CRITICAL PRIORITY: If you have FortiGate SSL-VPN exposed to internet, assume compromise until patched. APT groups are actively exploiting this. Hunt for: (1) Unauthorized admin account creation, (2) Unexpected configuration changes, (3) Unusual outbound connections from FortiGate, (4) New VPN sessions from unexpected geolocations. Patch immediately or disable SSL-VPN."
+    }
+  },
+  {
+    "source_url": "https://thehackernews.com/2025/01/cobalt-strike-detection",
+    "content_type": "detection_engineering",
+    "data": {
+      "detection_name": "Cobalt Strike Beacon Detection via Network Telemetry",
+      "what_it_detects": "Cobalt Strike beacons by analyzing network traffic patterns, timing jitter, and default TLS certificates - even when C2 communications are encrypted",
+      "data_sources": [
+        "Network flow data (NetFlow/IPFIX)",
+        "Full packet capture (for certificate analysis)",
+        "Endpoint network telemetry (Sysmon Event ID 3, EDR network events)",
+        "DNS query logs",
+        "TLS certificate metadata"
+      ],
+      "detection_logic": "KQL Query for Microsoft Defender:\nDeviceNetworkEvents\n| where RemotePort in (80, 443, 8080)\n| summarize \n    RequestCount = count(),\n    AvgInterval = avg(datetime_diff('second', Timestamp, prev(Timestamp))),\n    StdDevInterval = stdev(datetime_diff('second', Timestamp, prev(Timestamp)))\n    by DeviceName, RemoteIP\n| where RequestCount > 10\n| where AvgInterval between (30 .. 90)\n| where StdDevInterval between (10 .. 45)  // Jitter detection\n\nAdditional detection: Monitor for TLS certificates with serial number 146473198 (default Cobalt Strike certificate)",
+      "false_positive_potential": "medium",
+      "tuning_recommendations": "Tune AvgInterval and StdDevInterval ranges based on your environment's normal beacon patterns. Exclude known-good applications with regular polling intervals (software updaters, monitoring agents). Correlate with process reputation and signing information. Focus on unsigned or suspicious processes making network connections with regular intervals.",
+      "coverage": "Detects: Default and poorly-configured CS beacons, beacons with characteristic timing patterns, beacons using default certificates. Does NOT detect: Heavily customized malleable C2 profiles, beacons using legitimate-looking timing patterns, beacons tunneled through legitimate services (e.g., via domain fronting), SMB beacons (no network traffic).",
+      "key_takeaway": "Implement this detection immediately - it catches a significant portion of real-world CS usage where operators don't heavily customize their profiles. Combine with YARA rules for in-memory beacon detection and hunt for serial 146473198 in your TLS traffic. This is especially valuable for catching hands-on-keyboard activity during intrusions."
+    }
+  }
+]
