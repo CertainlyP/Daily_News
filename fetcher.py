@@ -120,54 +120,87 @@ class ContentFetcher:
         return posts
 
     def fetch_articles(self) -> List[Dict]:
-        """Fetch articles from configured URLs using requests."""
+        """Fetch individual articles from listing pages."""
         articles = []
-        urls = self.config['sources']['article_urls']
+        listing_urls = self.config['sources']['article_urls']
+        max_articles = self.config['settings'].get('max_articles_per_source', 5)
 
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
 
-        for url in urls:
+        for listing_url in listing_urls:
             try:
-                print(f"  Fetching {url}...")
-                response = requests.get(url, headers=headers, timeout=15)
+                print(f"  Fetching listing page: {listing_url}")
+                response = requests.get(listing_url, headers=headers, timeout=15)
                 response.raise_for_status()
 
                 soup = BeautifulSoup(response.content, 'html.parser')
 
-                # Try to extract main content
-                # Common article containers
-                article = (
-                    soup.find('article') or
-                    soup.find('div', class_='content') or
-                    soup.find('div', class_='post-content') or
-                    soup.find('main')
-                )
+                # Extract article links from listing page
+                article_links = []
 
-                if article:
-                    # Remove script and style elements
-                    for script in article(['script', 'style', 'nav', 'footer', 'aside']):
-                        script.decompose()
+                # For bleepingcomputer and similar sites
+                for link in soup.find_all('a', href=True):
+                    href = link['href']
+                    # Make absolute URL
+                    if href.startswith('/'):
+                        from urllib.parse import urljoin
+                        href = urljoin(listing_url, href)
 
-                    text = article.get_text(separator='\n', strip=True)
-                else:
-                    text = soup.get_text(separator='\n', strip=True)
+                    # Filter for article URLs (avoid navigation, tags, etc.)
+                    if '/news/' in href or '/article' in href or '/20' in href:
+                        if href not in article_links and href != listing_url:
+                            article_links.append(href)
 
-                # Clean up excessive whitespace
-                text = '\n'.join(line.strip() for line in text.split('\n') if line.strip())
+                print(f"    Found {len(article_links)} potential articles")
 
-                if text:
-                    articles.append({
-                        'source': url,
-                        'url': url,
-                        'content': text[:10000],  # Limit content length
-                        'type': 'article'
-                    })
-                    print(f"    ✓ Fetched article ({len(text)} chars)")
+                # Fetch first N articles
+                for article_url in article_links[:max_articles]:
+                    try:
+                        print(f"    Fetching article: {article_url[:60]}...")
+                        article_response = requests.get(article_url, headers=headers, timeout=10)
+                        article_response.raise_for_status()
+
+                        article_soup = BeautifulSoup(article_response.content, 'html.parser')
+
+                        # Extract article content
+                        article_content = (
+                            article_soup.find('article') or
+                            article_soup.find('div', class_='article_section') or
+                            article_soup.find('div', class_='content') or
+                            article_soup.find('div', class_='post-content') or
+                            article_soup.find('main')
+                        )
+
+                        if article_content:
+                            # Remove junk
+                            for junk in article_content(['script', 'style', 'nav', 'footer', 'aside', 'iframe', 'form']):
+                                junk.decompose()
+
+                            text = article_content.get_text(separator='\n', strip=True)
+                        else:
+                            # Fallback
+                            text = article_soup.get_text(separator='\n', strip=True)
+
+                        # Clean whitespace
+                        text = '\n'.join(line.strip() for line in text.split('\n') if line.strip())
+
+                        if text and len(text) > 200:  # Only keep if substantial content
+                            articles.append({
+                                'source': article_url,
+                                'url': article_url,
+                                'content': text[:15000],  # Limit length
+                                'type': 'article'
+                            })
+                            print(f"      ✓ Extracted article ({len(text)} chars)")
+
+                    except Exception as e:
+                        print(f"      ✗ Error fetching article: {e}")
+                        continue
 
             except Exception as e:
-                print(f"    ✗ Error fetching {url}: {e}")
+                print(f"    ✗ Error fetching listing page {listing_url}: {e}")
                 continue
 
         return articles
