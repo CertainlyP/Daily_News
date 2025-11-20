@@ -20,6 +20,12 @@ class ContentFetcher:
         """Fetch content from all configured sources."""
         all_content = []
 
+        # Fetch Reddit posts
+        if 'reddit_subreddits' in self.config['sources']:
+            print("Fetching Reddit posts...")
+            reddit_content = self.fetch_reddit_posts()
+            all_content.extend(reddit_content)
+
         # Fetch Twitter posts
         if os.path.exists(self.twitter_session):
             print("Fetching Twitter posts...")
@@ -34,6 +40,78 @@ class ContentFetcher:
         all_content.extend(article_content)
 
         return all_content
+
+    def fetch_reddit_posts(self) -> List[Dict]:
+        """Fetch posts from configured subreddits using Reddit JSON API."""
+        posts = []
+        subreddits = self.config['sources'].get('reddit_subreddits', [])
+
+        if not subreddits:
+            print("  No Reddit subreddits configured.")
+            return posts
+
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+
+        for subreddit_config in subreddits:
+            # Support both simple string or dict config
+            if isinstance(subreddit_config, str):
+                subreddit = subreddit_config
+                sort = 'hot'
+                time_filter = 'day'
+                limit = 10
+            else:
+                subreddit = subreddit_config.get('subreddit')
+                sort = subreddit_config.get('sort', 'hot')  # hot, new, top, rising
+                time_filter = subreddit_config.get('time', 'day')  # hour, day, week, month, year, all
+                limit = subreddit_config.get('limit', 10)
+
+            try:
+                print(f"  Fetching r/{subreddit} (sort: {sort})...")
+
+                # Build Reddit JSON API URL
+                if sort == 'top':
+                    url = f"https://www.reddit.com/r/{subreddit}/top.json?t={time_filter}&limit={limit}"
+                else:
+                    url = f"https://www.reddit.com/r/{subreddit}/{sort}.json?limit={limit}"
+
+                response = requests.get(url, headers=headers, timeout=15)
+                response.raise_for_status()
+
+                data = response.json()
+                reddit_posts = data['data']['children']
+
+                for post_data in reddit_posts:
+                    post = post_data['data']
+
+                    # Extract post content
+                    title = post.get('title', '')
+                    selftext = post.get('selftext', '')
+                    url_link = post.get('url', '')
+                    permalink = f"https://www.reddit.com{post.get('permalink', '')}"
+
+                    # Combine title and selftext as content
+                    content = f"{title}\n\n{selftext}".strip()
+
+                    # Skip if no meaningful content
+                    if not content or len(content) < 50:
+                        continue
+
+                    posts.append({
+                        'source': f'r/{subreddit}',
+                        'url': permalink,
+                        'content': content[:10000],  # Limit length
+                        'type': 'reddit'
+                    })
+
+                print(f"    ✓ Fetched {len(reddit_posts)} posts from r/{subreddit}")
+
+            except Exception as e:
+                print(f"    ✗ Error fetching from r/{subreddit}: {e}")
+                continue
+
+        return posts
 
     def fetch_twitter_posts(self) -> List[Dict]:
         """Fetch posts from configured Twitter accounts using Playwright."""
