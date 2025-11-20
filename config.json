@@ -1,5 +1,10 @@
 {
   "sources": {
+    "reddit_subreddits": [
+      {"subreddit": "netsec", "sort": "hot", "limit": 10},
+      {"subreddit": "cybersecurity", "sort": "new", "limit": 10},
+      {"subreddit": "blueteamsec", "sort": "hot", "limit": 5}
+    ],
     "twitter_accounts": [],
     "article_urls": ["https://www.bleepingcomputer.com/news/security/"]
   },
