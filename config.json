@@ -1,7 +1,7 @@
 {
   "sources": {
     "twitter_accounts": [],
-    "article_urls": ["https://www.bleepingcomputer.com/news/security/"]
+    "article_urls": ["https://www.bleepingcomputer.com/news/security/","https://thedfirreport.com/","https://thehackernews.com/"]
   },
   "settings": {
     "twitter_session_file": "twitter_session.json",
